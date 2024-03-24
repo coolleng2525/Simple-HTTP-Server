@@ -15,10 +15,14 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#define WEBS_NAME "cweb"
+#define HOME_PAGE "login.html"
+#define DBG(fmt, ...) printf(" %s:%d " fmt,__FILE__, __LINE__, ##__VA_ARGS__)
 #define PORT 8080
 #define BUFFER_SIZE 104857600
 
 const char *get_file_extension(const char *file_name) {
+
     const char *dot = strrchr(file_name, '.');
     if (!dot || dot == file_name) {
         return "";
@@ -39,6 +43,8 @@ const char *get_mime_type(const char *file_ext) {
         return "application/octet-stream";
     }
 }
+
+
 
 bool case_insensitive_compare(const char *s1, const char *s2) {
     while (*s1 && *s2) {
@@ -93,10 +99,43 @@ char *url_decode(const char *src) {
     return decoded;
 }
 
+void Redirect(const char *file_name, 
+                const char *file_ext, 
+                char *response, 
+                size_t *response_len)
+{ 
+#define REDIRECT_URL_BUF_SIZE 1024
+    int len = 0;
+    size_t max_len = *response_len;
+    char redirectUrl[REDIRECT_URL_BUF_SIZE] = "";
+
+    if (strlen(file_name) != 0) {
+        DBG("file_name %s\n", file_name);
+    }
+    snprintf(redirectUrl, REDIRECT_URL_BUF_SIZE, "http://%s/%s", "2.2.2.2",
+        "?redirect=1&mac=00:00:00:00:00:00&ip=1.1.2.2&apmac=00:00:00:00:00:00&ssid=ssid");
+    len = snprintf(response + len, max_len-len, "HTTP/1.0 200 OK\r\n");
+    len += snprintf(response + len, max_len-len, "Server: %s\r\n", WEBS_NAME);
+    len += snprintf(response + len, max_len-len,"Content-Type: text/html\r\n");
+    len += snprintf(response + len, max_len-len, "\r\n");
+    len += snprintf(response + len, max_len-len, "<html><head><title>Redirecting to the portal page</title>"
+                                "<meta http-equiv='refresh' content='0;url=\"%s\"'>"
+                                "</head><body>Redirecting to the portal page</body></html>", redirectUrl);
+    *response_len = len;
+}
+
 void build_http_response(const char *file_name, 
                         const char *file_ext, 
                         char *response, 
                         size_t *response_len) {
+
+    if (strlen(file_name) == 0 || strcasecmp(file_ext, "rd") == 0){
+        DBG("file_name is empty, redirect to login.html\n");
+        file_ext="html";
+        file_name = HOME_PAGE;
+        Redirect(file_name,file_ext,response,response_len); 
+        return;
+    }                 
     // build HTTP header
     const char *mime_type = get_mime_type(file_ext);
     char *header = (char *)malloc(BUFFER_SIZE * sizeof(char));
@@ -105,7 +144,7 @@ void build_http_response(const char *file_name,
              "Content-Type: %s\r\n"
              "\r\n",
              mime_type);
-
+   
     // if file not exist, response is 404 Not Found
     int file_fd = open(file_name, O_RDONLY);
     if (file_fd == -1) {
@@ -156,14 +195,22 @@ void *handle_client(void *arg) {
             buffer[matches[1].rm_eo] = '\0';
             const char *url_encoded_file_name = buffer + matches[1].rm_so;
             char *file_name = url_decode(url_encoded_file_name);
-
+            DBG("file_name: %s\n", file_name);
+            char *start = strstr(file_name, "?");
+            DBG("start: %s\n", start);
+            if (start != NULL) {
+                *start = '\0';
+            }
             // get file extension
             char file_ext[32];
             strcpy(file_ext, get_file_extension(file_name));
 
+            DBG("file_name: %s file_ext: %s \n", file_name, file_ext);
+             size_t response_len;
+            response_len = BUFFER_SIZE * 2 * sizeof(char);
             // build HTTP response
-            char *response = (char *)malloc(BUFFER_SIZE * 2 * sizeof(char));
-            size_t response_len;
+            char *response = (char *)malloc(response_len);
+           
             build_http_response(file_name, file_ext, response, &response_len);
 
             // send HTTP response to client
@@ -181,6 +228,10 @@ void *handle_client(void *arg) {
 }
 
 int main(int argc, char *argv[]) {
+    int port = PORT;
+    if (argc > 1) {
+        port = atoi(argv[1]);
+    }
     int server_fd;
     struct sockaddr_in server_addr;
 
@@ -193,7 +244,7 @@ int main(int argc, char *argv[]) {
     // config socket
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port = htons(PORT);
+    server_addr.sin_port = htons(port);
 
     // bind socket to port
     if (bind(server_fd, 
@@ -209,7 +260,7 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    printf("Server listening on port %d\n", PORT);
+    printf("Server listening on port %d\n", port);
     while (1) {
         // client info
         struct sockaddr_in client_addr;

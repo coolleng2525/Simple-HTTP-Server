@@ -1,0 +1,75 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+<title>welcome login</title>
+<link href="css/css.css" rel="stylesheet" type="text/css" />
+<!-- max480 -->
+<link href="css/css.css" rel="stylesheet" type="text/css" media="only screen and (max-width:480px)" />
+<script type="text/javascript">
+    function get_param(name)
+      {
+      if (location.href.indexOf("?") >= 0)
+        {
+        var query=location.href.split("?")[1];
+        var params=query.split("&");
+        for (var i = 0; i < params.length; i ++)
+          {
+          value_pair=params[i].split("=");
+          if (value_pair[0] == name)
+            return unescape(value_pair[1]);
+          }
+        }
+      return "";
+      }
+    var bestuur="Stad Oostende";
+    var adres="Vindictivelaan 1, 8400 Oostende";
+    var logo_bestuur="images/logo.gif";
+    var logo_hoogte=118;
+    var logo_breedte=211;
+    var url_zonedirector="http://" + get_param("sip") + ":9997/login";
+    // show the sip content in class h1
+    // document.getElementsByClassName("h1")[0].innerHTML("login " + get_param("sip"));
+    // // show the sip content in class h2
+    // document.getElementsByClassName("h2")[0].innerHTML("login " + get_param("sip"));
+    // modify h2 class content with sip
+
+</script>
+</head>
+
+<body class="background">
+
+
+    <table width="480" height="480" align="center" cellpadding="5" cellspacing="0">
+        <tr>
+            <td width="480">
+                <p class="h2"> sip:
+                    <script type="text/javascript">
+                        document.write(get_param("sip"));
+                        // get access source ip
+                        document.write("<br />");
+                    </script>
+                </p>
+                <p class="h1">Weclome
+                    <br />
+                    <!-- <span class="h2"> use nms/nms login </span> -->
+                    <center>
+                        <span class="afbeelding">
+                            <script type="text/javascript">
+                                document.write("<form action='"+url_zonedirector+"'method=GET target='_blank'>");
+                            </script>
+                                <input type="hidden" name="username" value="nnnn"/>
+                                <input type="hidden" name="password" value="nnnn"/>
+                                <input type="image" value="xx" src="ok.jpg" alt="xx logo" />
+                            </form>
+
+                        <!-- <span class="goedkeuring"><br />
+                            nms/nms  644548  <br /> </span> -->
+                    </center>
+
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
